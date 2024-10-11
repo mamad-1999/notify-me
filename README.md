@@ -11,7 +11,7 @@
 go install github.com/mamad-1999/notify-me@latest
 ```
 > [!IMPORTANT]
-> #### Requirement packeage
+> #### Requirement package
 > 
 > The script uses the `notify-send` command for desktop notifications and `aplay` to play a sound. Make sure these utilities are installed on your system:
 > ```bash
