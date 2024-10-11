@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,15 +18,24 @@ const soundDir = ".notify-me"
 const soundFileName = "alarm.wav"
 
 func main() {
-	// Ensure correct number of arguments
-	if len(os.Args) < 3 {
-		fmt.Println("Usage: notify-me HH:MM \"message\"")
+	showHelp := flag.Bool("h", false, "Display help")
+	flag.Parse()
+
+	if *showHelp {
+		displayHelp()
 		return
 	}
 
-	// Parse input time
-	alarmTime := os.Args[1]
-	message := os.Args[2]
+	// Ensure correct number of arguments
+	if len(flag.Args()) < 2 {
+		fmt.Println("Error: Invalid number of arguments.")
+		displayHelp()
+		return
+	}
+
+	// Parse input time and message
+	alarmTime := flag.Arg(0)
+	message := flag.Arg(1)
 
 	// Normalize time format to HH:MM, handling single-digit hours (e.g., 1:23)
 	if !strings.Contains(alarmTime, ":") || len(alarmTime) < 4 || len(alarmTime) > 5 {
@@ -78,6 +88,19 @@ func main() {
 
 	// Close and exit
 	fmt.Println("Alarm completed!")
+}
+
+// displayHelp shows usage instructions and examples
+func displayHelp() {
+	fmt.Println("Usage: notify-me [HH:MM] \"message\"")
+	fmt.Println("Alarm program that notifies the user with a message at the specified time.")
+	fmt.Println("\nOptions:")
+	fmt.Println("  -h               Display help")
+	fmt.Println("\nExamples:")
+	fmt.Println("  notify-me 14:30 \"Go to the gym\"")
+	fmt.Println("  notify-me 09:00 \"Join the meeting\"")
+	fmt.Println("  notify-me 1:15 \"Take a break\"")
+	fmt.Println("\nThe program will also play a sound when the alarm triggers.")
 }
 
 // Notify sends a desktop notification using the notify-send command
