@@ -2,12 +2,19 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 )
+
+const soundURL = "https://raw.githubusercontent.com/mamad-1999/notify-me/refs/heads/master/alarm.wav"
+const soundDir = ".notify-me"
+const soundFileName = "alarm.wav"
 
 func main() {
 	// Ensure correct number of arguments
@@ -50,6 +57,16 @@ func main() {
 		alarm = alarm.Add(24 * time.Hour)
 	}
 
+	// Ensure sound file exists, download if necessary
+	soundPath := getSoundFilePath()
+	if _, err := os.Stat(soundPath); os.IsNotExist(err) {
+		err := downloadSound(soundPath)
+		if err != nil {
+			fmt.Println("Error downloading sound:", err)
+			return
+		}
+	}
+
 	// Sleep until alarm time
 	duration := time.Until(alarm)
 	fmt.Printf("Sleeping for %v until %v\n", duration, alarm)
@@ -57,7 +74,7 @@ func main() {
 
 	// Trigger notification and sound when the alarm goes off
 	notify(message)
-	playSound()
+	playSound(soundPath)
 
 	// Close and exit
 	fmt.Println("Alarm completed!")
@@ -73,10 +90,49 @@ func notify(message string) {
 }
 
 // playSound plays a short sound using aplay or another system sound tool
-func playSound() {
-	cmd := exec.Command("aplay", "/home/mohammad/Videos/go/notify-me/alarm.wav") // or your preferred sound file
+func playSound(soundPath string) {
+	cmd := exec.Command("aplay", soundPath)
 	err := cmd.Run()
 	if err != nil {
 		fmt.Println("Error playing sound:", err)
 	}
+}
+
+// getSoundFilePath returns the path to the alarm.wav file in the user's home directory
+func getSoundFilePath() string {
+	homeDir, _ := os.UserHomeDir()
+	return filepath.Join(homeDir, soundDir, soundFileName)
+}
+
+// downloadSound downloads the sound file from the GitHub repository and saves it locally
+func downloadSound(dest string) error {
+	fmt.Println("Downloading sound file...")
+
+	// Create directory if not exists
+	err := os.MkdirAll(filepath.Dir(dest), os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	// Download the sound file
+	resp, err := http.Get(soundURL)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Save the file
+	out, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Sound file downloaded and saved to:", dest)
+	return nil
 }
